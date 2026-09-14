@@ -1,5 +1,4 @@
 services:
-
   postgres:
     image: postgres:16
     container_name: integration-hub-postgres
@@ -27,6 +26,7 @@ services:
     volumes:
       - .:/app
     environment:
+      PYTHONPATH: /app
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://integration:integration@postgres:5432/integration_hub}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       APP_NAME: ${APP_NAME:-Enterprise Content Integration Hub}
@@ -43,6 +43,7 @@ services:
     volumes:
       - .:/app
     environment:
+      PYTHONPATH: /app
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://integration:integration@postgres:5432/integration_hub}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       APP_NAME: ${APP_NAME:-Enterprise Content Integration Hub}
