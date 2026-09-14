@@ -1,0 +1,56 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: integration-hub-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-integration_hub}
+      POSTGRES_USER: ${POSTGRES_USER:-integration}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-integration}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: integration-hub-redis
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    container_name: integration-hub-api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://integration:integration@postgres:5432/integration_hub}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      APP_NAME: ${APP_NAME:-Enterprise Content Integration Hub}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      - postgres
+      - redis
+
+  worker:
+    build: .
+    container_name: integration-hub-worker
+    command: celery -A app.workers.celery_app worker --loglevel=INFO
+    volumes:
+      - .:/app
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://integration:integration@postgres:5432/integration_hub}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      APP_NAME: ${APP_NAME:-Enterprise Content Integration Hub}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  postgres_data:
